@@ -1,0 +1,107 @@
+services:
+  # ========================================
+  # Base de datos PostgreSQL
+  # ========================================
+  db:
+    image: postgres:15-alpine
+    container_name: api_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      # Volumen persistente para datos
+      - postgres_data:/var/lib/postgresql/data
+      # Script SQL para inicialización
+      - ./src/config/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - api_network
+    # Health check para esperar que esté lista
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ========================================
+  # Aplicación Node.js
+  # ========================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development  # Cambiar a 'production' para prod
+    container_name: api_app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${PORT}
+      DB_HOST: db
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_POOL_SIZE: ${DB_POOL_SIZE}
+      DB_IDLE_TIMEOUT_MS: ${DB_IDLE_TIMEOUT_MS}
+      DB_CONNECTION_TIMEOUT_MS: ${DB_CONNECTION_TIMEOUT_MS}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+    ports:
+      - "${PORT}:3000"
+    volumes:
+      # Monto el código para desarrollo (hot reload)
+      - .:/app
+      - /app/node_modules
+    networks:
+      - api_network
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # ========================================
+  # pgAdmin - Interfaz de administración de BD (opcional)
+  # ========================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: api_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - api_network
+    depends_on:
+      - db
+
+# ========================================
+# Volúmenes
+# ========================================
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+# ========================================
+# Redes
+# ========================================
+networks:
+  api_network:
+    driver: bridge
