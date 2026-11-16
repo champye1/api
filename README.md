@@ -7,6 +7,8 @@ API REST completa y profesional con autenticación JWT, gestión de usuarios y C
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat&logo=postgresql&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-000000?style=flat&logo=jsonwebtokens&logoColor=white)
+[![CI](https://github.com/champye1/api/actions/workflows/ci.yml/badge.svg)](https://github.com/champye1/api/actions/workflows/ci.yml)
+![Swagger](https://img.shields.io/badge/Swagger-85EA2D?style=flat&logo=swagger&logoColor=black)
 
 ---
 
@@ -21,6 +23,8 @@ API REST completa y profesional con autenticación JWT, gestión de usuarios y C
 - 🛡️ **Manejo de errores global** — respuestas claras y consistentes, incluyendo errores de conexión a la base
 - 🔄 **Graceful shutdown** — cierre seguro del servidor ante SIGTERM/SIGINT
 - 🌐 **CORS configurable** por variable de entorno
+- 📚 **Documentación Swagger/OpenAPI** interactiva en `/api-docs`
+- ✅ **CI con GitHub Actions** — lint, verificación del spec Swagger y arranque del servidor en cada push/PR
 
 ---
 
@@ -85,6 +89,28 @@ JWT_SECRET=tu_secreto_jwt
 | DELETE | `/api/productos/:id` | Eliminar un producto |
 
 > ⚠️ Confirma los métodos exactos de cada recurso revisando los archivos en `src/routes/`. La tabla refleja un CRUD estándar.
+
+---
+
+## 📚 Documentación interactiva (Swagger)
+
+Con el servidor corriendo, la documentación completa de los 15 endpoints está disponible en:
+
+- **Swagger UI:** [`http://localhost:3000/api-docs`](http://localhost:3000/api-docs)
+- **Spec OpenAPI (JSON):** [`http://localhost:3000/api-docs.json`](http://localhost:3000/api-docs.json)
+
+Generada automáticamente con `swagger-jsdoc` a partir de comentarios `@swagger` en `src/routes/*.js` y `server.js`.
+
+---
+
+## ✅ CI/CD
+
+Cada push o pull request a `main` dispara un workflow de GitHub Actions (`.github/workflows/ci.yml`) que:
+
+1. Instala dependencias en Node 18.x y 20.x
+2. Verifica la sintaxis de todo el código (`npm run lint`)
+3. Valida que el spec de Swagger se genera correctamente (`npm run verify-docs`)
+4. Levanta el servidor y comprueba que `/health` responde `200`
 
 ---
 

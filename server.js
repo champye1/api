@@ -7,6 +7,8 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./src/config/swagger');
 
 // Importar rutas
 const authRoutes = require('./src/routes/authRoutes');
@@ -44,13 +46,31 @@ if (process.env.NODE_ENV === 'development') {
 // Rutas de la API
 // ========================================
 
-// Health check
+/**
+ * @swagger
+ * /health:
+ *   get:
+ *     summary: Verifica que la API está activa
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: La API está funcionando correctamente
+ */
 app.get('/health', (req, res) => {
   res.json({
     éxito: true,
     mensaje: 'API funcionando correctamente',
     timestamp: new Date().toISOString()
   });
+});
+
+// Documentación interactiva (Swagger UI)
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// Especificación OpenAPI cruda, en formato JSON
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
 });
 
 // Rutas de autenticación
